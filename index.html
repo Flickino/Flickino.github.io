@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>❤️ Valentine Card ❤️</title>
+  <style>
+    /* Basic Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #facece;
+      font-family: "Angelia Beauty", cursive, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ENVELOPE CONTAINER */
+    .envelope {
+      position: relative;
+      width: 300px;
+      height: 200px;
+      perspective: 800px; /* needed for 3D flap rotation */
+      cursor: pointer;
+    }
+
+    /* BOTTOM PART OF ENVELOPE (rectangle) */
+    .envelope .body {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: #b90b0b;
+      border: 2px solid #000;
+      border-radius: 10px;
+      z-index: 1; 
+    }
+
+    /* TOP FLAP (triangle) */
+    .envelope .flap {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: #b90b0b;
+      border: 2px solid #000;
+      border-radius: 10px 10px 0 0;
+      z-index: 2;
+      transform-origin: top center;
+      transform: rotateX(0deg);
+      transition: transform 0.5s ease-in-out;
+      clip-path: polygon(46.7% 58.5%, 100% 0%, 0% 0%);
+    }
+
+    /* THE LETTER/PAPER INSIDE */
+    .envelope .paper {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 180px;
+      background-color: #ffe6e6;
+      border: 2px solid #000;
+      border-radius: 0 0 10px 10px;
+      transform: translateY(0); /* Hidden at start */
+      transition: transform 0.5s ease-in-out;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .envelope .paper p {
+      margin: 20px;
+      font-size: 18px;
+      text-align: center;
+    }
+
+    .Options {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .Options button {
+      background-color: #ff69b4;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .Options button:hover {
+      background-color: #ff1493;
+    }
+
+    /* DARK OVERLAY FOR ROMANTIC IMAGES */
+    .overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    .overlay img {
+      max-width: 80%;
+      max-height: 80%;
+      border-radius: 10px;
+    }
+
+    /* "ARE YOU SURE?" OVERLAY */
+    .sureOverlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .sureBox {
+      background-color: rgba(255, 255, 255, 0.95);
+      padding: 20px 30px;
+      border-radius: 10px;
+      text-align: center;
+      border: 2px solid #000;
+    }
+    .sureBox p {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+    .sureOptions {
+      display: flex;
+      justify-content: center;
+    }
+    .sureOptions button {
+      background-color: #ff69b4;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .sureOptions button:hover {
+      background-color: #ff1493;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="envelope" id="envelope">
+    <!-- Envelope bottom rectangle -->
+    <div class="body"></div>
+    <!-- Top flap (triangle) -->
+    <div class="flap" id="flap"></div>
+    <!-- Paper inside -->
+    <div class="paper" id="paper">
+      <p>Will you be my Valentine?</p>
+      <div class="Options">
+        <button id="yes">Yes</button>
+        <button id="no">No</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlay for Romantic Image(s) -->
+  <div id="overlay" class="overlay">
+    <img id="overlayImage" src="" alt="Romantic Image">
+  </div>
+
+  <!-- Overlay for "Are you sure?" logic -->
+  <div id="sureOverlay" class="sureOverlay">
+    <div class="sureBox">
+      <p id="sureText"></p>
+      <div class="sureOptions">
+        <button id="sureYes">Yes</button>
+        <button id="sureNo">No</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let clickCount = 0;
+    let noClickCount = 0;
+
+    const envelope     = document.getElementById('envelope');
+    const flap         = document.getElementById('flap');
+    const paper        = document.getElementById('paper');
+    const overlay      = document.getElementById('overlay');
+    const overlayImage = document.getElementById('overlayImage');
+
+    // "Are you sure?" overlay elements
+    const sureOverlay  = document.getElementById('sureOverlay');
+    const sureText     = document.getElementById('sureText');
+    const sureYes      = document.getElementById('sureYes');
+    const sureNo       = document.getElementById('sureNo');
+
+    // The sequence of "Are you sure?" messages
+    const sureMessages = [
+      'Are you sure?',
+      'Are you suuuure?',
+      'Are you surely suuure?',
+      'Are you really really sure?',
+      'Are you absolutely sure?'
+    ];
+
+    // ===============================
+    // 1. Check cookie on page load
+    // ===============================
+    document.addEventListener('DOMContentLoaded', () => {
+      const valentineChoice = getCookie("valentineChoice");
+      if (valentineChoice === "yes") {
+        // Show the final "Yes" image right away
+        showOverlay('./yippee-cat.gif');
+      } else if (valentineChoice === "no") {
+        // Show the final "No" image right away
+        showOverlay('./sad-okay.gif');
+      }
+    });
+
+    // ENVELOPE CLICK HANDLER
+    // 1st click => open flap
+    // 2nd click => slide paper out
+    envelope.addEventListener('click', () => {
+      if (clickCount === 0) {
+        // Open the flap
+        flap.style.transform = 'rotateX(180deg)';
+        flap.style.zIndex = 0;
+        clickCount++;
+      } else if (clickCount === 1) {
+        // Slide the letter out
+        paper.style.transform = 'translateY(-100%)';
+        clickCount++;
+      } else if (clickCount === 2) {
+        // Slide the letter back
+        paper.style.transform = 'translateY(0)';
+        clickCount--;
+      }
+    });
+
+    // YES BUTTON => Show a romantic image + store cookie
+    document.getElementById('yes').addEventListener('click', () => {
+      setCookie("valentineChoice", "yes", 365);
+      showOverlay('./yippee-cat.gif');
+    });
+
+    // NO BUTTON => Show "Are you sure?" overlay with brand new buttons
+    document.getElementById('no').addEventListener('click', () => {
+      noClickCount = 0;
+      sureText.textContent = sureMessages[noClickCount];
+      sureOverlay.style.display = 'flex';
+    });
+
+    // "Are you sure?" => YES => cycle through 5 messages
+    sureYes.addEventListener('click', () => {
+      noClickCount++;
+      if (noClickCount < 5) {
+        sureText.textContent = sureMessages[noClickCount];
+      } else {
+        // After 5 times, close overlay and show another romantic image
+        sureOverlay.style.display = 'none';
+        // Store "no" as final choice
+        setCookie("valentineChoice", "no", 365);
+        showOverlay('./sad-okay.gif');
+      }
+    });
+
+    // "Are you sure?" => NO => just hide the mini-overlay
+    sureNo.addEventListener('click', () => {
+      sureOverlay.style.display = 'none';
+    });
+
+    // Show full-screen overlay with an image
+    function showOverlay(imageSrc) {
+      overlayImage.src = imageSrc;
+      overlay.style.display = 'flex';
+    }
+
+    // ===============================
+    // Cookie Helpers
+    // ===============================
+    function setCookie(name, value, days) {
+      const d = new Date();
+      d.setTime(d.getTime() + days*24*60*60*1000);
+      const expires = "expires="+ d.toUTCString();
+      document.cookie = name + "=" + value + ";" + expires + ";path=/";
+    }
+
+    function getCookie(name) {
+      const cname = name + "=";
+      const decodedCookie = decodeURIComponent(document.cookie);
+      const ca = decodedCookie.split(';');
+      for(let i = 0; i < ca.length; i++) {
+        let c = ca[i].trim();
+        if (c.indexOf(cname) === 0) {
+          return c.substring(cname.length, c.length);
+        }
+      }
+      return "";
+    }
+  </script>
+</body>
+</html>
